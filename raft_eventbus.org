@@ -13,6 +13,11 @@
 All code gets RPC'd to leader node for actual creation of commands.
 
 *** Register handlers on 2 nodes
+
+DON'T DO THIS:
+Don't bother sending registrations as Raft commands. Only the messages
+and any ACKS should be commands.
+
 node A: eb.registerHandler('foo', function(message) { ... });
 node B: eb.registerHandler('foo', function(message) { ... });
 

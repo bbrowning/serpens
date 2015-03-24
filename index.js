@@ -25,8 +25,6 @@ var node = new Channel();
 if (cluster.isMaster) {
   node.listen('localhost', BASE_PORT);
 
-  node.on('message', onMessage);
-
   node.once('leader', function() {
     console.log('%d: master ready, booting workers', process.pid);
     for (var i = 1; i <= NUM_WORKERS; i++) {
@@ -37,16 +35,17 @@ if (cluster.isMaster) {
       });
       worker.send(port)
     }
+    node.registerHandler('foobar', onMessage);
   });
 
   node.on('joined', function(peer) {
     console.log('%d: peer %s joined', process.pid, peer.id);
-    node.publish('welcome ' + peer.id);
+    node.publish('foobar', 'welcome ' + peer.id);
   });
 } else if (cluster.isWorker) {
   process.on('message', function(port) {
     node.listen('localhost', port);
-    node.on('message', onMessage);
+    node.registerHandler('foobar', onMessage);
     process.send(node.url);
   });
 }
