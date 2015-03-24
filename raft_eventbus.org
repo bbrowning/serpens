@@ -1,0 +1,138 @@
+
+* RAFT EventBus
+
+** At-most-once vs at-least-once delivery for P2P
+- numRetries option - value of 0 is at-most-once, value more than that
+  is at-least-once
+- node ACKs after processing a P2P message
+- no ACK within timeout or before node dies triggers retry behavior
+- start out with at-most-once and add in retries later
+
+** Command Log and State
+
+All code gets RPC'd to leader node for actual creation of commands.
+
+*** Register handlers on 2 nodes
+node A: eb.registerHandler('foo', function(message) { ... });
+node B: eb.registerHandler('foo', function(message) { ... });
+
+{type: register, node: 'A', destination: 'foo'}
+{type: register, node: 'B', destination: 'foo'}
+
+handlers = {
+  'foo': {
+    nodes: ['A', 'B'],
+    lastChosen: null
+  }
+}
+
+*** Publish a message to all nodes
+eb.publish('foo', 'hello everyone');
+
+{type: publish, destination: 'foo', body: 'hello everyone'}
+
+the message gets sent to A & B
+
+*** Send a message to one node
+eb.send('foo', 'hi random neighbor');
+
+The leader chooses from registered 'foo' handlers round-robin by
+taking node following the lastChosen node, wrapping around the list as
+needed.
+
+{type: send, destinination: 'foo', body: 'hi random neighbor', node: 'A'}
+
+handlers = {
+  'foo': {
+    nodes: ['A', 'B'],
+    lastChosen: 'A'
+  }
+}
+
+*** Send another message to one node
+eb.send('foo', 'hi someone else');
+
+{type: send, destinination: 'foo', body: 'hi someone else', node: 'B'}
+
+handlers = {
+  'foo': {
+    nodes: ['A', 'B'],
+    lastChosen: 'B'
+  }
+}
+
+
+*** Publish a message to a nonexistent handler
+eb.publish('bar', 'goes nowhere');
+
+No command gets sent out, message just discarded. Client API could
+decide to return an error indicating that there are no handlers.
+
+*** Send a message to a nonexistent handler
+eb.send('bar', 'gets queued');
+
+With no handlers this gets stored in a queue and released once a
+handler does join.
+
+{type: queue, destination: 'bar', body: 'gets queued'}
+
+handlers = {
+  'foo': {
+    nodes: ['A', 'B'],
+    lastChosen: 'B'
+  }
+}
+queued = {
+  'bar': ['gets queued']
+}
+
+*** Register bar handler on existing node
+node B: eb.registerHandler('bar', function(message) { ... });
+
+{type: register, node: 'B', destination: 'bar'}
+
+handlers = {
+  'foo': {
+    nodes: ['A', 'B'],
+    lastChosen: 'B'
+  },
+  'bar': {
+    nodes: ['B'],
+    lastChosen: null
+  }
+}
+queued = {
+  'bar': ['gets queued']
+}
+
+{type: send, destination: 'bar', body: 'gets queued', node: 'B'}
+
+handlers = {
+  'foo': {
+    nodes: ['A', 'B'],
+    lastChosen: 'B'
+  },
+  'bar': {
+    nodes: ['B'],
+    lastChosen: 'B'
+  }
+}
+queued = {}
+
+
+When a message gets sent, make sure to check its ID (messages need an
+ID) against those queued for that destination and remove from the
+queued hash.
+
+
+** Implementation Details
+
+*** RPC via Skiff
+Skiff already has some RPC stuff built-in. But, we need to extend it
+to allow other RPC methods via node.installRpcHandler and extending
+State to handle other onFoo RPC methods.
+
+The RPC would be initiated from the Connections, which live on Peers.
+
+For the proxying nodes, if we need "read-your-writes" behavior, we can
+use waitForNode option when calling node.command(...).

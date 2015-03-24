@@ -1,0 +1,27 @@
+{
+  "name": "serpens",
+  "version": "1.0.0",
+  "description": "A Node.js reliable messaging library using Raft consensus",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ben Browning <bbrownin@redhat.com>",
+  "license": "Apache-2.0",
+  "files": [
+    "index.js",
+    "lib",
+    "LICENSE",
+    "README.md"
+  ],
+  "dependencies": {
+    "propagate": "^0.3.1",
+    "skiff-algorithm": "bbrowning/skiff-algorithm",
+    "skiff-tcp-msgpack": "0.8.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/bbrowning/serpens.git"
+  },
+  "bugs": "http://github.com/bbrowning/serpens/issues"
+}
