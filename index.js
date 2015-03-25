@@ -46,6 +46,7 @@ if (cluster.isMaster) {
   process.on('message', function(port) {
     node.listen('localhost', port);
     node.registerHandler('foobar', onMessage);
+    node.publish('foobar', 'published from node ' + process.pid);
     process.send(node.url);
   });
 }
