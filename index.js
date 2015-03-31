@@ -22,6 +22,10 @@ var NUM_WORKERS = 2,
 
 var node = new Channel();
 
+node.on('error', function(err) {
+  console.error('%d: %s', process.pid, err);
+});
+
 if (cluster.isMaster) {
   node.listen('localhost', BASE_PORT);
 
@@ -40,17 +44,48 @@ if (cluster.isMaster) {
 
   node.on('joined', function(peer) {
     console.log('%d: peer %s joined', process.pid, peer.id);
-    node.publish('foobar', 'welcome ' + peer.id);
   });
+
+  setTimeout(function() {
+    var start     = new Date(),
+        published = 0,
+        toPublish = 10000;
+    console.log('Benchmarking publishing %d messages to %d nodes',
+                toPublish, NUM_WORKERS + 1);
+    publish();
+
+    function publish() {
+      node.publish('foobar', 'message ' + published, function(err) {
+        if (!err) {
+          published += 1;
+          if (published % 500 === 0) {
+            console.log('Published %d', published);
+          }
+          if (published === toPublish) {
+            var elapsed = new Date() - start,
+            rate    = toPublish / (elapsed / 1000);
+            console.log('Finished benchmark');
+            console.log('Elapsed Time: %d ms', elapsed);
+            console.log('Rate: %d messages/second', rate.toFixed(2));
+            process.exit();
+          } else {
+            publish();
+          }
+        } else {
+          console.error(err);
+        }
+      });
+    }
+  }, 3000);
 } else if (cluster.isWorker) {
   process.on('message', function(port) {
+    console.log('listening on localhost:%d', port);
     node.listen('localhost', port);
     node.registerHandler('foobar', onMessage);
-    node.publish('foobar', 'published from node ' + process.pid);
     process.send(node.url);
   });
 }
 
 function onMessage(message) {
-  console.log('%d: received message %s', process.pid, message);
+  // console.log('%d: %d received message %s', process.pid, new Date(), message);
 }

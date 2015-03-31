@@ -130,14 +130,31 @@ ID) against those queued for that destination and remove from the
 queued hash.
 
 
-** Implementation Details
 
-*** RPC via Skiff
-Skiff already has some RPC stuff built-in. But, we need to extend it
-to allow other RPC methods via node.installRpcHandler and extending
-State to handle other onFoo RPC methods.
 
-The RPC would be initiated from the Connections, which live on Peers.
 
-For the proxying nodes, if we need "read-your-writes" behavior, we can
-use waitForNode option when calling node.command(...).
+
+* Throughput Issues
+
+Consensus isn't fast. Duh. How can we decrease latency and improve
+throughput? We can use consensus for group membership and to
+distribute handler registration. But what about messages? How do we
+not lose them?
+
+Use read-your-writes when registering a handler so then an immediate
+message sent get delivered to that handler.
+
+If messages don't go through Raft, then we lose the reliability of
+messages. Maybe figure out what our current throughput bottleneck is?
+If we can get to tens of thousands of messages per second for a
+cluster of 3 or 5 "brokers" is that good enough?
+
+Or, do we attempt to create a Raft consensus group for the cluster
+state (handlers, topics, etc) and then another consensus group per
+topic that only consists of nodes with registered handlers for that
+topic?
+
+Or perhaps only one consensus group for cluster state and then use
+Axon's PubSub or Push/Pull abstractions to actually distribute
+messages? This would need to piggy-back on top of the socket already
+opened for consensus?
