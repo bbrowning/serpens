@@ -31,13 +31,14 @@ if (cluster.isMaster) {
 
   node.once('leader', function() {
     console.log('%d: master ready, booting workers', process.pid);
+    function join(url) {
+      node.join(url);
+    }
     for (var i = 1; i <= NUM_WORKERS; i++) {
       var worker = cluster.fork();
       var port = BASE_PORT + i;
-      worker.on('message', function(url) {
-        node.join(url);
-      });
-      worker.send(port)
+      worker.on('message', join);
+      worker.send(port);
     }
     node.registerHandler('foobar', onMessage);
   });
