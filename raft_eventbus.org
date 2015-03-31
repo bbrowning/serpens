@@ -1,5 +1,5 @@
 
-* RAFT EventBus
+* Raft EventBus
 
 ** At-most-once vs at-least-once delivery for P2P
 - numRetries option - value of 0 is at-most-once, value more than that
