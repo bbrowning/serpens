@@ -18,7 +18,7 @@
     "propagate": "^0.3.1",
     "axon": "2.0.1",
     "abstract-skiff-transport": "0.8.0",
-    "skiff-algorithm": "bbrowning/skiff-algorithm",
+    "skiff-algorithm": "bbrowning/skiff-algorithm#7ee99a0fcf",
     "skiff-tcp-msgpack": "0.8.3"
   },
   "repository": {
