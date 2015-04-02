@@ -11,7 +11,7 @@ to add support for the existing LevelDB store. We probably want to
 write a custom store based on an embedded Node database as well.
 
 Right now all messages get distributed through consensus and because
-of this throughput is fairly limited (about 2700 messages/second on my
+of this throughput is fairly limited (about 3500 messages/second on my
 Lenovo T530 for a 3 node cluster). There should be some opportunities
 to improve throughput by modifying Skiff to do command batching like
 other more mature Raft implementations use.
