@@ -19,7 +19,7 @@ var Channel = require('./lib/channel'),
 
 var NUM_WORKERS  = 2,
     BASE_PORT    = 3000,
-    NUM_MESSAGES = 25000;
+    NUM_MESSAGES = 250000;
 
 var node = new Channel();
 
